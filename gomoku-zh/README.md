@@ -256,8 +256,3 @@ WEB_PORT
 MIT
 
 ---
-
-# 🙌 作者
-
-Full Stack Gomoku Project  
-Built with ❤️ and Node.js
