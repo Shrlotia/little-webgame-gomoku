@@ -1,4 +1,4 @@
-# 🎮 Gomoku (Full Stack Online Game)
+# Gomoku (Full Stack Online Game)
 
 A complete Gomoku battle system, including:
 
@@ -14,10 +14,10 @@ A complete Gomoku battle system, including:
 
 ---
 
-# 📦 Project Structure
+# Project Structure
 
 ```
-gomoku/
+gomoku-*/
 │
 ├── server/
 │   ├── server.js
@@ -33,7 +33,7 @@ gomoku/
 
 ---
 
-# ⚙️ System Requirements
+# System Requirements
 
 - Node.js 18+
 - npm
@@ -41,15 +41,15 @@ gomoku/
 
 ---
 
-# 🚀 Quick Start (Recommended)
+# Quick Start (Recommended)
 
-## 1️⃣ Make the script executable
+## 1 Make the script executable
 
 ```bash
 chmod +x start.sh
 ```
 
-## 2️⃣ Start with one command
+## 2 Start with one command
 
 ```bash
 ./start.sh
@@ -64,7 +64,7 @@ Backend: http://localhost:8787
 
 ---
 
-# 🔧 Manual Start
+# Manual Start
 
 ## Start backend
 
@@ -88,7 +88,7 @@ http://localhost:5173
 
 ---
 
-# 🧠 AI Design
+# AI Design
 
 AI uses:
 
@@ -108,7 +108,7 @@ Difficulty levels:
 
 ---
 
-# 🌐 Online System Design
+# Online System Design
 
 Uses:
 
@@ -126,7 +126,7 @@ Uses:
 
 ---
 
-# 🔐 Authentication System
+# Authentication System
 
 Uses:
 
@@ -143,7 +143,7 @@ Old WebSocket sessions are disconnected.
 
 ---
 
-# 🏆 Leaderboard Rules
+# Leaderboard Rules
 
 Scoring rules:
 
@@ -155,7 +155,7 @@ Sorted by rating.
 
 ---
 
-# 📊 Profile Page
+# Profile Page
 
 Editable:
 
@@ -170,7 +170,7 @@ Displayed:
 
 ---
 
-# 🛡 Security Design
+# Security Design
 
 - All moves are validated on the server
 - Server is the single source of truth for board state
@@ -179,7 +179,7 @@ Displayed:
 
 ---
 
-# 🐳 Docker (Optional)
+# Docker (Optional)
 
 For Docker deployment, you can create:
 
@@ -191,7 +191,7 @@ If needed, I can provide a full Docker version.
 
 ---
 
-# 🧪 Development Mode
+# Development Mode
 
 You can modify:
 
@@ -204,7 +204,7 @@ Restart the server to apply changes.
 
 ---
 
-# 📌 FAQ
+# FAQ
 
 ### Q: Online mode is not responding?
 
@@ -233,7 +233,7 @@ in `start.sh`.
 
 ---
 
-# 📈 Future Extensions
+# Future Extensions
 
 - Matchmaking system (auto match)
 - Match replay
@@ -249,7 +249,7 @@ in `start.sh`.
 
 ---
 
-# 📄 License
+# License
 
 MIT
 
