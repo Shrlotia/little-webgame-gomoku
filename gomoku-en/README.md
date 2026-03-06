@@ -254,5 +254,3 @@ in `start.sh`.
 MIT
 
 ---
-
-# 🙌 Author
