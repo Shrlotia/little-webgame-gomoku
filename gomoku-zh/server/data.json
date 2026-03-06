@@ -1,0 +1,17 @@
+{
+  "users": [
+    {
+      "id": "60228c6eca94",
+      "username": "test",
+      "passwordHash": "$2a$10$RL0Kd.hZceCP7F4Dr1oM3.4UqEQOYVZvt6HhyIWSXZixdB/xGD1uq",
+      "nickname": "test",
+      "avatar": "😀",
+      "rating": 1000,
+      "wins": 0,
+      "losses": 0,
+      "createdAt": 1772299791702,
+      "sessionId": "697be299-27f8-447f-b9f8-f20e010320b9"
+    }
+  ],
+  "matches": []
+}

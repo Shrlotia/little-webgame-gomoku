@@ -1,0 +1,1392 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gomoku 五子棋</title>
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.08);
+      --text:#e8eefc;
+      --muted:rgba(232,238,252,.7);
+      --line: rgba(255,255,255,.12);
+      --accent:#7aa2ff;
+      --accent2:#64ffd5;
+      --danger:#ff6b8a;
+      --shadow: 0 20px 50px rgba(0,0,0,.45);
+      --r:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 800px at 70% 10%, rgba(122,162,255,.15), transparent 55%),
+                  radial-gradient(900px 600px at 20% 20%, rgba(100,255,213,.10), transparent 55%),
+                  radial-gradient(900px 700px at 50% 110%, rgba(255,107,138,.08), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      font: 14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI","PingFang TC","Noto Sans TC",sans-serif;
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    .wrap{max-width:1150px; margin:0 auto; padding:22px}
+    header{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; margin-bottom:16px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+    }
+    .logo{
+      width:38px; height:38px; border-radius:12px;
+      background: linear-gradient(135deg, rgba(122,162,255,.9), rgba(100,255,213,.8));
+      box-shadow: 0 10px 25px rgba(122,162,255,.18);
+      position:relative;
+    }
+    .logo:after{
+      content:"";
+      position:absolute; inset:10px;
+      border-radius:10px;
+      background: rgba(11,15,23,.55);
+      border:1px solid rgba(255,255,255,.2);
+      backdrop-filter: blur(6px);
+    }
+    .brand h1{margin:0; font-size:16px; letter-spacing:.2px}
+    .brand p{margin:0; color:var(--muted); font-size:12px}
+    .topbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+    .pill{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: 999px;
+      padding:8px 10px;
+      display:flex; align-items:center; gap:8px;
+      backdrop-filter: blur(10px);
+    }
+    .btn{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background: var(--card);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius: 12px;
+      transition:.15s transform, .15s background, .15s border-color;
+      user-select:none;
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    .btn:hover{transform: translateY(-1px); background: var(--card2); border-color: rgba(255,255,255,.18)}
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(122,162,255,.85), rgba(100,255,213,.55));
+      border-color: rgba(255,255,255,.22);
+      color:#081018;
+      font-weight:700;
+    }
+    .btn.danger{
+      background: rgba(255,107,138,.12);
+      border-color: rgba(255,107,138,.35);
+      color: #ffd1db;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 380px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+    }
+    .card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+    .card .hd{
+      padding:14px 14px 10px 14px;
+      display:flex; align-items:center; justify-content:space-between;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .card .hd h2{margin:0; font-size:13px; letter-spacing:.2px; color:rgba(232,238,252,.92)}
+    .card .bd{padding:14px}
+    .tabs{
+      display:flex; gap:8px; flex-wrap:wrap;
+    }
+    .tab{
+      padding:8px 10px; border-radius: 999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color: rgba(232,238,252,.82);
+      cursor:pointer;
+      user-select:none;
+    }
+    .tab.active{
+      background: rgba(122,162,255,.18);
+      border-color: rgba(122,162,255,.35);
+      color: var(--text);
+    }
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    label{color:var(--muted); font-size:12px}
+    input, select{
+      width:100%;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--text);
+      border-radius: 12px;
+      padding:10px 12px;
+      outline:none;
+    }
+    input:focus, select:focus{border-color: rgba(122,162,255,.6)}
+    .field{display:grid; gap:6px; margin-bottom:10px}
+    .hint{color:var(--muted); font-size:12px}
+    .split{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .statline{
+      display:flex; gap:10px; flex-wrap:wrap;
+      color: rgba(232,238,252,.88);
+    }
+    .chip{
+      padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      display:inline-flex; gap:8px; align-items:center;
+      font-size:12px;
+    }
+    .canvasWrap{
+      padding:14px;
+    }
+    canvas{
+      width:min(640px, 100%);
+      aspect-ratio: 1/1;
+      display:block;
+      margin:0 auto;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      cursor:pointer;
+      touch-action: manipulation;
+    }
+    .log{
+      max-height: 180px;
+      overflow:auto;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      padding:10px;
+      background: rgba(0,0,0,.18);
+      color: rgba(232,238,252,.85);
+      font-size:12px;
+      white-space: pre-wrap;
+    }
+    table{
+      width:100%;
+      border-collapse: collapse;
+      font-size:12px;
+    }
+    th, td{
+      text-align:left;
+      padding:10px 8px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      color: rgba(232,238,252,.86);
+    }
+    th{color: rgba(232,238,252,.72); font-weight:600}
+    .mini{
+      width:34px; height:34px; border-radius: 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      display:grid; place-items:center;
+    }
+    .rightActions{display:flex; gap:8px; flex-wrap:wrap}
+    .toast{
+      position: fixed;
+      bottom: 18px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.18);
+      padding:10px 12px;
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      color: rgba(232,238,252,.95);
+      max-width: min(620px, calc(100% - 24px));
+      display:none;
+    }
+    .toast.show{display:block}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Gomoku 五子棋</h1>
+          <p>單人 AI / 同機雙人 / 聯網對戰｜簡約 UI｜排行榜 & 個人資料</p>
+        </div>
+      </div>
+      <div class="topbar">
+        <div class="pill" id="userPill">
+          <div class="mini" id="avatarBox">😀</div>
+          <div style="display:grid; gap:2px">
+            <div id="userName" style="font-weight:700">未登入</div>
+            <div id="userMeta" class="hint">請登入以使用聯網與排行榜</div>
+          </div>
+        </div>
+        <button class="btn" id="btnProfile">個人資料</button>
+        <button class="btn" id="btnLeaderboard">排行榜</button>
+        <button class="btn primary" id="btnAuth">登入 / 註冊</button>
+        <button class="btn danger" id="btnLogout" style="display:none">登出</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- 左側：模式/設定/面板 -->
+      <div class="card">
+        <div class="hd">
+          <h2>控制台</h2>
+          <div class="rightActions">
+            <button class="btn" id="btnNew">新局</button>
+            <button class="btn" id="btnUndo">悔棋</button>
+          </div>
+        </div>
+        <div class="bd">
+          <div class="tabs" id="modeTabs">
+            <div class="tab active" data-mode="ai">單人 AI</div>
+            <div class="tab" data-mode="local">同機雙人</div>
+            <div class="tab" data-mode="online">聯網對戰</div>
+          </div>
+
+          <div id="panel_ai" style="margin-top:12px">
+            <div class="split">
+              <div class="field">
+                <label>AI 難度</label>
+                <select id="aiLevel">
+                  <option value="easy">Easy（偏直覺）</option>
+                  <option value="normal" selected>Normal（Minimax）</option>
+                  <option value="hard">Hard（更深搜尋）</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>你先手？</label>
+                <select id="humanFirst">
+                  <option value="yes" selected>是（黑子）</option>
+                  <option value="no">否（白子）</option>
+                </select>
+              </div>
+            </div>
+            <div class="hint">AI 會針對活三、活四、衝四等形狀做高權重判斷，Hard 會做更深的 Alpha-Beta 搜尋。</div>
+          </div>
+
+          <div id="panel_local" style="margin-top:12px; display:none">
+            <div class="hint">同一台裝置兩人輪流下（黑先白後）。</div>
+          </div>
+
+          <div id="panel_online" style="margin-top:12px; display:none">
+            <div class="hint">需先登入。建立房間分享代碼，或輸入代碼加入。</div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn primary" id="btnCreateRoom">建立房間</button>
+              <button class="btn" id="btnLeaveRoom">離開房間</button>
+            </div>
+            <div class="field" style="margin-top:10px">
+              <label>加入房間代碼</label>
+              <div class="row" style="width:100%">
+                <input id="joinCode" placeholder="例如：A1B2C3" style="flex:1; min-width:180px" />
+                <button class="btn" id="btnJoinRoom">加入</button>
+              </div>
+            </div>
+            <div class="statline">
+              <span class="chip">狀態：<b id="onlineStatus">未連線</b></span>
+              <span class="chip">房間：<b id="roomCode">—</b></span>
+              <span class="chip">你的座位：<b id="seatInfo">—</b></span>
+            </div>
+          </div>
+
+          <div style="margin-top:14px" class="statline">
+            <span class="chip">回合：<b id="turnText">黑（●）</b></span>
+            <span class="chip">模式：<b id="modeText">單人 AI</b></span>
+            <span class="chip">結果：<b id="resultText">進行中</b></span>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="hint" style="margin-bottom:6px">對局記錄</div>
+            <div class="log" id="logBox"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右側：棋盤 -->
+      <div class="card">
+        <div class="hd">
+          <h2>棋盤（15×15）</h2>
+          <div class="hint" id="subHint">點擊格線下子，先連成五子者獲勝</div>
+        </div>
+        <div class="canvasWrap">
+          <canvas id="board" width="720" height="720"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- 簡易 Modal -->
+  <div id="modalRoot" style="position:fixed; inset:0; display:none; place-items:center; padding:18px; background: rgba(0,0,0,.55); backdrop-filter: blur(10px);">
+    <div class="card" style="width:min(560px, 100%);">
+      <div class="hd">
+        <h2 id="modalTitle">Modal</h2>
+        <button class="btn" id="modalClose">關閉</button>
+      </div>
+      <div class="bd" id="modalBody"></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ===== 基本設定 =====
+  const API_BASE = "http://localhost:8787";
+  const WS_BASE  = "ws://localhost:8787";
+  const N = 15;
+
+  // board[y][x] = 0 empty, 1 black, 2 white
+  let board = emptyBoard();
+  let history = [];
+  let turn = 1;
+  let winner = 0;
+
+  let mode = "ai"; // "ai"|"local"|"online"
+  let aiLevel = "normal";
+  let humanFirst = true;
+
+  // online
+  let ws = null;
+  let roomCode = null;
+  let seat = 0; // 1 black / 2 white
+  let onlinePlayers = [null, null, null];
+
+  // auth
+  let token = localStorage.getItem("gomoku_token") || "";
+  let me = null;
+
+  // UI refs
+  const $ = (q) => document.querySelector(q);
+  const canvas = $("#board");
+  const ctx = canvas.getContext("2d");
+  const logBox = $("#logBox");
+
+  function toast(msg){
+    const t = $("#toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._tm);
+    toast._tm = setTimeout(()=>t.classList.remove("show"), 2200);
+  }
+
+  function log(msg){
+    const ts = new Date().toLocaleTimeString();
+    logBox.textContent = `[${ts}] ${msg}\n` + logBox.textContent;
+  }
+
+  function setMode(m){
+    mode = m;
+    $("#modeText").textContent = m==="ai"?"單人 AI":m==="local"?"同機雙人":"聯網對戰";
+    $("#panel_ai").style.display = m==="ai" ? "" : "none";
+    $("#panel_local").style.display = m==="local" ? "" : "none";
+    $("#panel_online").style.display = m==="online" ? "" : "none";
+    if (m !== "online") disconnectWS();
+    newGame(true);
+    if (m === "online") $("#subHint").textContent = "聯網：新局/悔棋需對方同意";
+    else $("#subHint").textContent = "點擊格線下子，先連成五子者獲勝";
+  }
+
+  function emptyBoard(){
+    return Array.from({length:N},()=>Array(N).fill(0));
+  }
+
+  function newGame(silent=false){
+    board = emptyBoard();
+    history = [];
+    turn = 1;
+    winner = 0;
+    $("#resultText").textContent = "進行中";
+    updateTurnText();
+    render();
+
+    if (!silent) log("開始新局");
+    if (mode==="ai"){
+      aiLevel = $("#aiLevel").value;
+      humanFirst = $("#humanFirst").value === "yes";
+      if (!humanFirst){
+        // AI 先手
+        setTimeout(()=>aiMove(), 120);
+      }
+    }
+  }
+
+  function updateTurnText(){
+    $("#turnText").textContent = (turn===1?"黑（●）":"白（○）");
+  }
+
+  function inBounds(x,y){ return x>=0 && x<N && y>=0 && y<N; }
+
+  function place(x,y,p){
+    if (winner) return false;
+    if (!inBounds(x,y)) return false;
+    if (board[y][x]!==0) return false;
+    board[y][x]=p;
+    history.push({x,y,p});
+    winner = checkWin(board, x, y);
+    if (winner){
+      $("#resultText").textContent = winner===1?"黑勝":"白勝";
+    }
+    turn = (turn===1?2:1);
+    updateTurnText();
+    render();
+    return true;
+  }
+
+  function undo(){
+    if (mode === "online"){
+      if (!ws || ws.readyState!==1) { toast("尚未連線"); return; }
+      if (!seat) { toast("尚未在房間"); return; }
+      if (winner) { toast("勝負已出，聯網悔棋已鎖定"); return; }
+      ws.send(JSON.stringify({ type:"requestProposal", action:"undo" }));
+      toast("已向對方提出悔棋請求，等待回應…");
+      log("已提出：悔棋請求（聯網）");
+      return;
+    }
+
+    openModal("確認：悔棋", `
+      <div>確定要悔棋嗎？${mode==="ai" ? "（單人模式會一併悔掉 AI 的一步）" : ""}</div>
+      <div style="height:12px"></div>
+      <div class="row">
+        <button class="btn" id="cancelUndo">取消</button>
+        <button class="btn primary" id="confirmUndo">確認悔棋</button>
+      </div>
+    `);
+    $("#cancelUndo").addEventListener("click", ()=>closeModal());
+    $("#confirmUndo").addEventListener("click", ()=>{
+      closeModal();
+      if (history.length===0) { toast("沒有可悔的一步"); return; }
+      const a = history.pop();
+      board[a.y][a.x]=0;
+      winner = 0;
+      turn = a.p;
+      updateTurnText();
+      $("#resultText").textContent = "進行中";
+      render();
+
+      if (mode==="ai" && history.length>0){
+        const b = history[history.length-1];
+        const humanP = humanFirst ? 1 : 2;
+        if (b.p !== humanP){
+          const c = history.pop();
+          board[c.y][c.x]=0;
+          turn = c.p;
+          updateTurnText();
+          render();
+        }
+      }
+      log("悔棋（本機）");
+    });
+  }
+
+  // ===== 棋盤渲染 =====
+  function render(){
+    const w=canvas.width, h=canvas.height;
+    ctx.clearRect(0,0,w,h);
+
+    // grid background
+    ctx.save();
+    ctx.globalAlpha = 1;
+    // subtle vignette
+    const g = ctx.createRadialGradient(w*0.5,h*0.4, 40, w*0.5,h*0.5, w*0.7);
+    g.addColorStop(0, "rgba(255,255,255,0.06)");
+    g.addColorStop(1, "rgba(0,0,0,0.10)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,w,h);
+
+    const pad = 36;
+    const size = Math.min(w,h) - pad*2;
+    const cell = size/(N-1);
+
+    // lines
+    ctx.strokeStyle = "rgba(255,255,255,0.14)";
+    ctx.lineWidth = 1;
+    for (let i=0;i<N;i++){
+      const x = pad + cell*i;
+      const y = pad + cell*i;
+      ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(pad+size, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, pad+size); ctx.stroke();
+    }
+
+    // star points
+    const stars = [3,7,11];
+    for (const sy of stars){
+      for (const sx of stars){
+        drawDot(pad+cell*sx, pad+cell*sy, 3.2, "rgba(255,255,255,0.22)");
+      }
+    }
+
+    // pieces
+    for (let y=0;y<N;y++){
+      for (let x=0;x<N;x++){
+        const p = board[y][x];
+        if (!p) continue;
+        const cx = pad+cell*x;
+        const cy = pad+cell*y;
+        drawPiece(cx, cy, cell*0.42, p);
+      }
+    }
+
+    // last move highlight
+    const last = history[history.length-1];
+    if (last){
+      const cx = pad+cell*last.x;
+      const cy = pad+cell*last.y;
+      ctx.strokeStyle = "rgba(122,162,255,0.70)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, cell*0.48, 0, Math.PI*2);
+      ctx.stroke();
+    }
+
+    // winner overlay
+    if (winner){
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillRect(0,0,w,h);
+      ctx.fillStyle = "rgba(232,238,252,0.92)";
+      ctx.font = "700 28px ui-sans-serif,system-ui";
+      const text = winner===1 ? "黑勝（●）" : "白勝（○）";
+      const m = ctx.measureText(text);
+      ctx.fillText(text, (w-m.width)/2, h/2);
+    }
+
+    ctx.restore();
+  }
+
+  function drawDot(x,y,r,fill){
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawPiece(x,y,r,p){
+    // fake 3D: gradient
+    const grad = ctx.createRadialGradient(x-r*0.35,y-r*0.35, r*0.2, x,y,r);
+    if (p===1){
+      grad.addColorStop(0, "rgba(255,255,255,0.18)");
+      grad.addColorStop(1, "rgba(0,0,0,0.92)");
+    }else{
+      grad.addColorStop(0, "rgba(255,255,255,0.95)");
+      grad.addColorStop(1, "rgba(170,180,210,0.75)");
+    }
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.22)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function xyFromEvent(ev){
+    const rect = canvas.getBoundingClientRect();
+    const px = (ev.clientX - rect.left) * (canvas.width / rect.width);
+    const py = (ev.clientY - rect.top)  * (canvas.height/ rect.height);
+
+    const pad = 36;
+    const size = Math.min(canvas.width,canvas.height) - pad*2;
+    const cell = size/(N-1);
+
+    const x = Math.round((px - pad)/cell);
+    const y = Math.round((py - pad)/cell);
+    if (!inBounds(x,y)) return null;
+
+    // allow some slack
+    const cx = pad + cell*x;
+    const cy = pad + cell*y;
+    const dist = Math.hypot(px-cx, py-cy);
+    if (dist > cell*0.55) return null;
+    return {x,y};
+  }
+
+  // ===== 勝負判斷 =====
+  function checkWin(b, lastX, lastY){
+    const p = b[lastY][lastX];
+    if (!p) return 0;
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    for (const [dx,dy] of dirs){
+      let cnt=1;
+      for (let k=1;k<5;k++){
+        const x=lastX+dx*k, y=lastY+dy*k;
+        if (!inBounds(x,y) || b[y][x]!==p) break;
+        cnt++;
+      }
+      for (let k=1;k<5;k++){
+        const x=lastX-dx*k, y=lastY-dy*k;
+        if (!inBounds(x,y) || b[y][x]!==p) break;
+        cnt++;
+      }
+      if (cnt>=5) return p;
+    }
+    return 0;
+  }
+
+  // ===== AI：候選點 + 模式評分 + Minimax(AB) =====
+  // 思路：
+  // 1) 只考慮「距離任一棋子 2 格內」的候選點（大幅剪枝）
+  // 2) 用 pattern heuristic 評分（活四/衝四/活三/眠三…）
+  // 3) Easy：只看一層（立即攻防）
+  // 4) Normal：Minimax depth=2~3（含 AB）
+  // 5) Hard：迭代加深到 4~5（時間/節點限制），更強的剪枝與排序
+
+  const PATTERN_SCORES = {
+    // 以「己方」視角：越大越好
+    FIVE: 10000000,
+    OPEN_FOUR: 1200000,
+    FOUR: 240000,
+    OPEN_THREE: 45000,
+    THREE: 12000,
+    OPEN_TWO: 2500,
+    TWO: 700
+  };
+
+  function aiMove(){
+    if (winner) return;
+    const humanP = humanFirst ? 1 : 2;
+    const aiP = humanP===1 ? 2 : 1;
+    if (turn !== aiP) return;
+
+    const level = $("#aiLevel").value;
+    let best;
+
+    if (level==="easy"){
+      best = pickBestMoveOnePly(aiP, humanP, 10);
+    } else if (level==="normal"){
+      best = minimaxRoot(aiP, humanP, 3, 20_000);
+    } else {
+      best = iterativeDeepening(aiP, humanP, 5, 60_000);
+    }
+
+    if (!best){
+      // fallback：中心附近
+      best = {x:7,y:7};
+    }
+    place(best.x, best.y, aiP);
+    log(`AI 下：(${best.x+1},${best.y+1})`);
+  }
+
+  function candidates(b){
+    // 若空盤：直接中間
+    let any=false;
+    for (let y=0;y<N && !any;y++) for (let x=0;x<N;x++) if (b[y][x]) { any=true; break; }
+    if (!any) return [{x:7,y:7}];
+
+    const set = new Set();
+    const out = [];
+    for (let y=0;y<N;y++){
+      for (let x=0;x<N;x++){
+        if (!b[y][x]) continue;
+        for (let dy=-2; dy<=2; dy++){
+          for (let dx=-2; dx<=2; dx++){
+            const nx=x+dx, ny=y+dy;
+            if (!inBounds(nx,ny)) continue;
+            if (b[ny][nx]!==0) continue;
+            const key = ny*100+nx;
+            if (set.has(key)) continue;
+            set.add(key);
+            out.push({x:nx,y:ny});
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  function applyMove(b, mv, p){
+    b[mv.y][mv.x]=p;
+  }
+  function revertMove(b, mv){
+    b[mv.y][mv.x]=0;
+  }
+
+  function pickBestMoveOnePly(aiP, humanP, limit){
+    const b = cloneBoard(board);
+    let cand = candidates(b);
+
+    // 先做排序：高分在前（利於剪枝/更像人）
+    cand = cand.map(m => ({...m, s: quickMoveScore(b, m, aiP, humanP)}))
+               .sort((a,b)=>b.s-a.s)
+               .slice(0, Math.max(limit, 8));
+
+    // 先檢查：AI 是否有立即致勝，或必須擋人類致勝
+    for (const m of cand){
+      applyMove(b,m,aiP);
+      if (checkWin(b, m.x, m.y)===aiP) { revertMove(b,m); return m; }
+      revertMove(b,m);
+    }
+    for (const m of cand){
+      applyMove(b,m,humanP);
+      if (checkWin(b, m.x, m.y)===humanP) { revertMove(b,m); return m; }
+      revertMove(b,m);
+    }
+
+    // 否則用 quick score
+    return cand[0] || null;
+  }
+
+  function cloneBoard(b){ return b.map(row => row.slice()); }
+
+  function lineString(b, x, y, dx, dy, p){
+    // 從 (x,y) 往兩側看，組一段字串，例如 "..XX.X.."
+    // 0 empty=".", p="X", opp="O"
+    const opp = p===1?2:1;
+    let s = "X"; // 中心假設下在這
+    // forward
+    for (let k=1;k<=5;k++){
+      const nx=x+dx*k, ny=y+dy*k;
+      if (!inBounds(nx,ny)) { s += "#"; break; }
+      const v = b[ny][nx];
+      s += v===0?".":(v===p?"X":"O");
+    }
+    // backward prepend
+    let pre = "";
+    for (let k=1;k<=5;k++){
+      const nx=x-dx*k, ny=y-dy*k;
+      if (!inBounds(nx,ny)) { pre = "#"+pre; break; }
+      const v = b[ny][nx];
+      pre = (v===0?".":(v===p?"X":"O")) + pre;
+    }
+    return pre + s;
+  }
+
+  function patternScoreForMove(b, mv, p){
+    // 把 mv 當成已落子 p，計算形狀分
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    let score = 0;
+    for (const [dx,dy] of dirs){
+      const s = lineString(b, mv.x, mv.y, dx, dy, p);
+      score += scoreLine(s);
+    }
+    return score;
+  }
+
+  function scoreLine(s){
+    // s 含有 '.' 'X' 'O' '#'
+    // 找常見 pattern
+    // 注意：這不是「精確棋型庫」，但對於實戰已足夠強（尤其搭配 minimax）
+    let score = 0;
+
+    // Five
+    if (s.includes("XXXXX")) return PATTERN_SCORES.FIVE;
+
+    // Open four: .XXXX.
+    if (s.includes(".XXXX.")) score += PATTERN_SCORES.OPEN_FOUR;
+
+    // Four (冲四): XXXX. / .XXXX / XXX.X / XX.XX / X.XXX
+    if (s.match(/XXXX\./) || s.match(/\.XXXX/) || s.includes("XXX.X") || s.includes("XX.XX") || s.includes("X.XXX")){
+      score += PATTERN_SCORES.FOUR;
+    }
+
+    // Open three: .XXX. / .XX.X. / .X.XX.
+    if (s.includes(".XXX.") || s.includes(".XX.X.") || s.includes(".X.XX.")){
+      score += PATTERN_SCORES.OPEN_THREE;
+    }
+
+    // Three (眠三): XXX.. / ..XXX / XX.X. / .X.XX / X.XX. / .XX.X
+    if (s.match(/XXX\.\./) || s.match(/\.\.XXX/) || s.includes("XX.X.") || s.includes(".X.XX") || s.includes("X.XX.") || s.includes(".XX.X")){
+      score += PATTERN_SCORES.THREE;
+    }
+
+    // Open two: .XX. / .X.X. / .X..X.
+    if (s.includes(".XX.") || s.includes(".X.X.") || s.includes(".X..X.")){
+      score += PATTERN_SCORES.OPEN_TWO;
+    }
+
+    // Two
+    if (s.includes("XX..") || s.includes("..XX") || s.includes("X.X.") || s.includes(".X.X")){
+      score += PATTERN_SCORES.TWO;
+    }
+
+    return score;
+  }
+
+  function evaluateBoard(b, maxP){
+    // 評估：maxP 越大越好，對手越小越好
+    const minP = maxP===1?2:1;
+
+    // 全盤掃描候選附近即可（簡化）
+    const cand = candidates(b);
+    let maxScore = 0;
+    let minScore = 0;
+
+    for (const mv of cand){
+      // max side
+      applyMove(b, mv, maxP);
+      const w1 = checkWin(b, mv.x, mv.y);
+      let s1 = (w1===maxP) ? PATTERN_SCORES.FIVE : patternScoreForMove(b, mv, maxP);
+      revertMove(b, mv);
+      maxScore = Math.max(maxScore, s1);
+
+      // min side
+      applyMove(b, mv, minP);
+      const w2 = checkWin(b, mv.x, mv.y);
+      let s2 = (w2===minP) ? PATTERN_SCORES.FIVE : patternScoreForMove(b, mv, minP);
+      revertMove(b, mv);
+      minScore = Math.max(minScore, s2);
+    }
+
+    // 更重視「對手威脅」：避免送活四
+    return maxScore - minScore*1.08;
+  }
+
+  function quickMoveScore(b, mv, aiP, humanP){
+    // 同時考慮：自己下這一步的進攻分 + 防守分
+    applyMove(b, mv, aiP);
+    const w = checkWin(b, mv.x, mv.y);
+    let atk = (w===aiP) ? PATTERN_SCORES.FIVE : patternScoreForMove(b, mv, aiP);
+    revertMove(b, mv);
+
+    applyMove(b, mv, humanP);
+    const w2 = checkWin(b, mv.x, mv.y);
+    let def = (w2===humanP) ? PATTERN_SCORES.FIVE : patternScoreForMove(b, mv, humanP);
+    revertMove(b, mv);
+
+    return atk + def*0.92;
+  }
+
+  function minimaxRoot(maxP, minP, depth, nodeLimit){
+    const b = cloneBoard(board);
+    let nodes = 0;
+
+    let cand = candidates(b)
+      .map(m => ({...m, s: quickMoveScore(b, m, maxP, minP)}))
+      .sort((a,b)=>b.s-a.s)
+      .slice(0, 18);
+
+    let best = null;
+    let bestVal = -Infinity;
+    let alpha = -Infinity, beta = Infinity;
+
+    for (const mv of cand){
+      if (nodes++ > nodeLimit) break;
+      applyMove(b, mv, maxP);
+      let val;
+      if (checkWin(b, mv.x, mv.y)===maxP) val = PATTERN_SCORES.FIVE;
+      else val = minimax(b, depth-1, false, maxP, minP, alpha, beta, () => (++nodes > nodeLimit));
+      revertMove(b, mv);
+
+      if (val > bestVal){
+        bestVal = val;
+        best = {x:mv.x,y:mv.y};
+      }
+      alpha = Math.max(alpha, bestVal);
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+
+  function iterativeDeepening(maxP, minP, maxDepth, nodeLimit){
+    const b = cloneBoard(board);
+    let best = null;
+
+    // 先用 one-ply 找個起始
+    best = pickBestMoveOnePly(maxP, minP, 14) || best;
+
+    // 逐層加深
+    let nodes = 0;
+    for (let d=2; d<=maxDepth; d++){
+      let cand = candidates(b)
+        .map(m => ({...m, s: quickMoveScore(b, m, maxP, minP)}))
+        .sort((a,b)=>b.s-a.s)
+        .slice(0, 20);
+
+      let alpha=-Infinity, beta=Infinity;
+      let bestVal=-Infinity;
+      let localBest = best;
+
+      for (const mv of cand){
+        if (nodes++ > nodeLimit) return localBest;
+        applyMove(b, mv, maxP);
+        let val;
+        if (checkWin(b, mv.x, mv.y)===maxP) val = PATTERN_SCORES.FIVE;
+        else val = minimax(b, d-1, false, maxP, minP, alpha, beta, () => (++nodes > nodeLimit));
+        revertMove(b, mv);
+
+        if (val > bestVal){
+          bestVal = val;
+          localBest = {x:mv.x,y:mv.y};
+        }
+        alpha = Math.max(alpha, bestVal);
+        if (beta <= alpha) break;
+      }
+      best = localBest;
+    }
+    return best;
+  }
+
+  function minimax(b, depth, maximizing, maxP, minP, alpha, beta, shouldStop){
+    if (shouldStop?.()) return evaluateBoard(b, maxP);
+    if (depth<=0) return evaluateBoard(b, maxP);
+
+    const p = maximizing ? maxP : minP;
+    const opp = p===1?2:1;
+
+    let cand = candidates(b)
+      .map(m => ({...m, s: quickMoveScore(b, m, p, opp)}))
+      .sort((a,b)=>b.s-a.s)
+      .slice(0, maximizing ? 16 : 16);
+
+    if (maximizing){
+      let best = -Infinity;
+      for (const mv of cand){
+        applyMove(b, mv, p);
+        const w = checkWin(b, mv.x, mv.y);
+        let val;
+        if (w===p) val = PATTERN_SCORES.FIVE;
+        else val = minimax(b, depth-1, false, maxP, minP, alpha, beta, shouldStop);
+        revertMove(b, mv);
+        best = Math.max(best, val);
+        alpha = Math.max(alpha, best);
+        if (beta <= alpha) break;
+        if (shouldStop?.()) break;
+      }
+      return best;
+    } else {
+      let best = Infinity;
+      for (const mv of cand){
+        applyMove(b, mv, p);
+        const w = checkWin(b, mv.x, mv.y);
+        let val;
+        if (w===p) val = -PATTERN_SCORES.FIVE; // 對 maxP 而言是壞事
+        else val = minimax(b, depth-1, true, maxP, minP, alpha, beta, shouldStop);
+        revertMove(b, mv);
+        best = Math.min(best, val);
+        beta = Math.min(beta, best);
+        if (beta <= alpha) break;
+        if (shouldStop?.()) break;
+      }
+      return best;
+    }
+  }
+
+  // ===== 互動：點擊下子 =====
+  canvas.addEventListener("click", (ev) => {
+    const pos = xyFromEvent(ev);
+    if (!pos) return;
+
+    if (mode==="online"){
+      if (!ws || ws.readyState!==1){ toast("尚未連線"); return; }
+      if (!seat){ toast("尚未在房間"); return; }
+      if (winner){ toast("已結束"); return; }
+      if (turn !== seat){ toast("還沒輪到你"); return; }
+      // 送到 server
+      ws.send(JSON.stringify({ type:"move", x:pos.x, y:pos.y }));
+      return;
+    }
+
+    if (mode==="local"){
+      if (place(pos.x,pos.y, turn===1?1:2)){
+        log(`下：${history[history.length-1].p===1?"黑":"白"} (${pos.x+1},${pos.y+1})`);
+      }
+      return;
+    }
+
+    if (mode==="ai"){
+      const humanP = humanFirst ? 1 : 2;
+      if (winner) return;
+      if (turn !== humanP){ toast("AI 思考中"); return; }
+      if (place(pos.x,pos.y, humanP)){
+        log(`你下：(${pos.x+1},${pos.y+1})`);
+        if (!winner){
+          setTimeout(()=>aiMove(), 90);
+        } else {
+          // 可選：上報結果（若登入）
+          if (me) reportLocalResult("win", "AI");
+        }
+      }
+      return;
+    }
+  });
+
+  // ===== UI：模式切換 =====
+  $("#modeTabs").addEventListener("click", (ev) => {
+    const t = ev.target.closest(".tab");
+    if (!t) return;
+    [...document.querySelectorAll(".tab")].forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    setMode(t.dataset.mode);
+  });
+
+  $("#aiLevel").addEventListener("change", () => {
+    aiLevel = $("#aiLevel").value;
+    toast("已切換難度");
+    newGame(true);
+  });
+  $("#humanFirst").addEventListener("change", () => {
+    humanFirst = $("#humanFirst").value === "yes";
+    toast("已切換先手");
+    newGame(true);
+  });
+
+  $("#btnNew").addEventListener("click", ()=>{
+    if (mode === "online"){
+      if (!ws || ws.readyState!==1) { toast("尚未連線"); return; }
+      if (!seat) { toast("尚未在房間"); return; }
+      ws.send(JSON.stringify({ type:"requestProposal", action:"newGame" }));
+      toast("已向對方提出新局請求，等待回應…");
+      log("已提出：新局請求（聯網）");
+      return;
+    }
+
+    openModal("確認：開始新局", `
+      <div>確定要開始新局嗎？（目前棋盤會被清空）</div>
+      <div style="height:12px"></div>
+      <div class="row">
+        <button class="btn" id="cancelNew">取消</button>
+        <button class="btn primary" id="confirmNew">確定開始</button>
+      </div>
+    `);
+    $("#cancelNew").addEventListener("click", ()=>closeModal());
+    $("#confirmNew").addEventListener("click", ()=>{
+      closeModal();
+      newGame();
+      log("使用者確認：新局");
+    });
+  });
+  $("#btnUndo").addEventListener("click", ()=>undo());
+
+  // ===== Auth / Profile / Leaderboard =====
+  function setUserUI(){
+    const logged = !!me;
+    $("#btnAuth").style.display = logged ? "none" : "";
+    $("#btnLogout").style.display = logged ? "" : "none";
+    $("#userName").textContent = logged ? `${me.avatar} ${me.nickname}` : "未登入";
+    $("#avatarBox").textContent = logged ? me.avatar : "😀";
+    $("#userMeta").textContent = logged
+      ? `@${me.username}｜積分 ${me.rating}｜W/L ${me.wins}/${me.losses}`
+      : "請登入以使用聯網與排行榜";
+  }
+
+  async function api(path, opt={}){
+    const headers = Object.assign({ "Content-Type":"application/json" }, opt.headers||{});
+    if (token) headers.Authorization = "Bearer " + token;
+    const res = await fetch(API_BASE + path, { ...opt, headers });
+    const data = await res.json().catch(()=> ({}));
+    if (!res.ok) throw new Error(data.error || "Request failed");
+    return data;
+  }
+
+  async function refreshMe(){
+    if (!token) { me=null; setUserUI(); return; }
+    try{
+      const r = await api("/api/me");
+      me = r.user;
+      setUserUI();
+    }catch{
+      token=""; localStorage.removeItem("gomoku_token");
+      me=null; setUserUI();
+    }
+  }
+
+  function openModal(title, html){
+    $("#modalTitle").textContent = title;
+    $("#modalBody").innerHTML = html;
+    $("#modalRoot").style.display = "grid";
+  }
+  function closeModal(){ $("#modalRoot").style.display = "none"; }
+  $("#modalClose").addEventListener("click", closeModal);
+  $("#modalRoot").addEventListener("click", (e)=>{ if (e.target.id==="modalRoot") closeModal(); });
+
+  $("#btnAuth").addEventListener("click", ()=>{
+    openModal("登入 / 註冊", `
+      <div class="split">
+        <div class="card" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.10); box-shadow:none">
+          <div class="bd">
+            <div style="font-weight:800; margin-bottom:8px">登入</div>
+            <div class="field"><label>帳號</label><input id="login_user" placeholder="例如 player_01"></div>
+            <div class="field"><label>密碼</label><input id="login_pass" type="password" placeholder="至少 6 碼"></div>
+            <button class="btn primary" id="doLogin" style="width:100%">登入</button>
+          </div>
+        </div>
+        <div class="card" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.10); box-shadow:none">
+          <div class="bd">
+            <div style="font-weight:800; margin-bottom:8px">註冊</div>
+            <div class="field"><label>帳號</label><input id="reg_user" placeholder="3-20: a-z0-9_"></div>
+            <div class="field"><label>密碼</label><input id="reg_pass" type="password" placeholder="至少 6 碼"></div>
+            <div class="field"><label>暱稱</label><input id="reg_nick" placeholder="顯示名稱"></div>
+            <button class="btn" id="doReg" style="width:100%">註冊</button>
+          </div>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:10px">提示：聯網房間與排行榜需要登入。</div>
+    `);
+
+    $("#doLogin").addEventListener("click", async ()=>{
+      try{
+        const username = $("#login_user").value.trim();
+        const password = $("#login_pass").value;
+        const r = await api("/api/login", { method:"POST", body: JSON.stringify({ username, password }) });
+        token = r.token; localStorage.setItem("gomoku_token", token);
+        me = r.user;
+        setUserUI();
+        toast("登入成功");
+        closeModal();
+      }catch(e){
+        toast(e.message);
+      }
+    });
+
+    $("#doReg").addEventListener("click", async ()=>{
+      try{
+        const username = $("#reg_user").value.trim();
+        const password = $("#reg_pass").value;
+        const nickname = $("#reg_nick").value.trim();
+        const r = await api("/api/register", { method:"POST", body: JSON.stringify({ username, password, nickname }) });
+        token = r.token; localStorage.setItem("gomoku_token", token);
+        me = r.user;
+        setUserUI();
+        toast("註冊成功");
+        closeModal();
+      }catch(e){
+        toast(e.message);
+      }
+    });
+  });
+
+  $("#btnLogout").addEventListener("click", ()=>{
+    token=""; me=null;
+    localStorage.removeItem("gomoku_token");
+    setUserUI();
+    disconnectWS();
+    toast("已登出");
+  });
+
+  $("#btnProfile").addEventListener("click", async ()=>{
+    if (!me){ toast("請先登入"); return; }
+    openModal("個人資料", `
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <div class="mini" style="font-size:18px" id="pf_avatarPreview">${me.avatar}</div>
+          <div style="display:grid">
+            <div style="font-weight:800; font-size:15px">${me.nickname}</div>
+            <div class="hint">@${me.username}｜積分 ${me.rating}</div>
+          </div>
+        </div>
+        <div class="chip">勝率：<b>${rateStr(me)}</b></div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="split">
+        <div class="field">
+          <label>暱稱</label>
+          <input id="pf_nick" value="${escapeHtml(me.nickname)}" />
+        </div>
+        <div class="field">
+          <label>頭像（emoji）</label>
+          <input id="pf_avatar" value="${escapeHtml(me.avatar)}" />
+        </div>
+      </div>
+      <button class="btn primary" id="pf_save" style="width:100%">儲存</button>
+      <div class="hint" style="margin-top:8px">W/L：${me.wins}/${me.losses}</div>
+    `);
+
+    $("#pf_avatar").addEventListener("input", ()=>{
+      $("#pf_avatarPreview").textContent = ($("#pf_avatar").value || "😀").slice(0,4);
+    });
+
+    $("#pf_save").addEventListener("click", async ()=>{
+      try{
+        const nickname = $("#pf_nick").value.trim();
+        const avatar = ($("#pf_avatar").value || "😀").trim().slice(0,4);
+        const r = await api("/api/me", { method:"POST", body: JSON.stringify({ nickname, avatar }) });
+        me = r.user;
+        setUserUI();
+        toast("已更新");
+        closeModal();
+      }catch(e){
+        toast(e.message);
+      }
+    });
+  });
+
+  $("#btnLeaderboard").addEventListener("click", async ()=>{
+    try{
+      const r = await api("/api/leaderboard");
+      const rows = r.top.map((u,i)=>`
+        <tr>
+          <td>${i+1}</td>
+          <td>${escapeHtml(u.avatar||"😀")} ${escapeHtml(u.nickname||u.username)}</td>
+          <td>${u.rating}</td>
+          <td>${u.wins}/${u.losses}</td>
+          <td>${rateStr(u)}</td>
+        </tr>
+      `).join("");
+      openModal("排行榜（Top 50）", `
+        <table>
+          <thead><tr><th>#</th><th>玩家</th><th>積分</th><th>W/L</th><th>勝率</th></tr></thead>
+          <tbody>${rows || ""}</tbody>
+        </table>
+        <div class="hint" style="margin-top:8px">積分：勝 +20、負 -10（最低 0）。</div>
+      `);
+    }catch(e){
+      toast(e.message);
+    }
+  });
+
+  function rateStr(u){
+    const w = Number(u.wins||0), l = Number(u.losses||0);
+    const t = w+l;
+    const r = t? (w/t*100) : 0;
+    return r.toFixed(1)+"%";
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  async function reportLocalResult(result, opponent){
+    // 可選：把「單人 vs AI」也寫入後端排行榜
+    try{
+      const r = await api("/api/matchResult", { method:"POST", body: JSON.stringify({ opponent, result }) });
+      me = r.user;
+      setUserUI();
+    }catch{ /* ignore */ }
+  }
+
+  // ===== Online：WebSocket 房間 =====
+  function connectWS(){
+    if (!token){ toast("請先登入"); return; }
+    if (ws && ws.readyState===1) return;
+
+    ws = new WebSocket(WS_BASE);
+    $("#onlineStatus").textContent = "連線中…";
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type:"auth", token }));
+    };
+    ws.onclose = () => {
+      $("#onlineStatus").textContent = "未連線";
+      $("#roomCode").textContent = "—";
+      $("#seatInfo").textContent = "—";
+      roomCode=null; seat=0; onlinePlayers=[null,null,null];
+    };
+    ws.onmessage = (ev) => {
+      let msg;
+      try{ msg=JSON.parse(ev.data); }catch{ return; }
+      if (msg.type==="auth_ok"){
+        $("#onlineStatus").textContent = "已連線";
+        log("已連線到對戰伺服器");
+      } else if (msg.type==="auth_fail"){
+        $("#onlineStatus").textContent = "登入失效";
+        toast("登入失效，請重新登入");
+      } else if (msg.type==="room"){
+        roomCode = msg.code;
+        seat = msg.seat;
+        $("#roomCode").textContent = roomCode;
+        $("#seatInfo").textContent = seat===1 ? "黑（●）" : "白（○）";
+        toast(`已進入房間 ${roomCode}`);
+        log(`房間：${roomCode}，你是 ${seat===1?"黑":"白"}`);
+      } else if (msg.type==="state"){
+        // 同步棋盤
+        board = msg.board;
+        history = Array.isArray(msg.history) ? msg.history : history;
+        turn = msg.turn;
+        winner = msg.winner || 0;
+        onlinePlayers = msg.players || onlinePlayers;
+        updateTurnText();
+        $("#resultText").textContent = winner ? (winner===1?"黑勝":"白勝") : "進行中";
+        render();
+        if (msg.undoCounts && seat){
+          const MAX_UNDO = 3;
+          const used = msg.undoCounts[seat] || 0;
+          $("#subHint").textContent = `聯網：悔棋已用 ${used}/${MAX_UNDO} 次（新局/悔棋需對方同意）`;
+        } else if (mode === "online"){
+          $("#subHint").textContent = "聯網：新局/悔棋需對方同意";
+        }
+        if (msg.lastMove){
+          log(`對局更新：${msg.lastMove.p===1?"黑":"白"} (${msg.lastMove.x+1},${msg.lastMove.y+1})`);
+        }
+      } else if (msg.type === "proposal") {
+          const actText = msg.action === "newGame" ? "重開新局" : "悔棋（退 1 步）";
+          openModal("對方請求", `
+            <div>對方請求：<b>${actText}</b></div>
+            <div class="hint" style="margin-top:6px">（20 秒內回覆，逾時視為拒絕）</div>
+            <div style="height:12px"></div>
+            <div class="row">
+              <button class="btn" id="rejectProp">拒絕</button>
+              <button class="btn primary" id="acceptProp">同意</button>
+            </div>
+          `);
+          $("#rejectProp").addEventListener("click", ()=>{
+            closeModal();
+            ws.send(JSON.stringify({ type: "respondProposal", proposalId: msg.id, accept: false }));
+            log("已拒絕對方請求");
+          });
+          $("#acceptProp").addEventListener("click", ()=>{
+            closeModal();
+            ws.send(JSON.stringify({ type: "respondProposal", proposalId: msg.id, accept: true }));
+            log("已同意對方請求");
+          });
+
+        } else if (msg.type === "proposal_sent") {
+          log(`請求已送出：${msg.action}`);
+
+        } else if (msg.type === "proposal_result") {
+          if (msg.accept) toast("對方同意");
+          else toast(msg.reason === "timeout" ? "對方未回覆（逾時）" : "對方拒絕");
+      } else if (msg.type==="error"){
+        toast(msg.message || "錯誤");
+      }
+    };
+  }
+
+  function disconnectWS(){
+    if (ws){
+      try{ ws.close(); }catch{}
+      ws=null;
+    }
+    roomCode=null; seat=0;
+    $("#onlineStatus").textContent = "未連線";
+    $("#roomCode").textContent = "—";
+    $("#seatInfo").textContent = "—";
+  }
+
+  $("#btnCreateRoom").addEventListener("click", ()=>{
+    if (!me){ toast("請先登入"); return; }
+    connectWS();
+    setTimeout(()=>{
+      if (ws && ws.readyState===1){
+        ws.send(JSON.stringify({ type:"createRoom" }));
+        log("建立房間中…");
+      }
+    }, 120);
+  });
+
+  $("#btnJoinRoom").addEventListener("click", ()=>{
+    if (!me){ toast("請先登入"); return; }
+    const code = $("#joinCode").value.trim().toUpperCase();
+    if (!code){ toast("請輸入代碼"); return; }
+    connectWS();
+    setTimeout(()=>{
+      if (ws && ws.readyState===1){
+        ws.send(JSON.stringify({ type:"joinRoom", code }));
+        log("加入房間中…");
+      }
+    }, 120);
+  });
+
+  $("#btnLeaveRoom").addEventListener("click", ()=>{
+    disconnectWS();
+    toast("已離開");
+  });
+
+  // ===== 初始化 =====
+  setUserUI();
+  refreshMe();
+  newGame(true);
+  render();
+
+  // 預設模式：AI
+  setMode("ai");
+})();
+</script>
+</body>
+</html>

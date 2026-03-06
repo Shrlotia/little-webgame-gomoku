@@ -1,0 +1,1407 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gomoku</title>
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.08);
+      --text:#e8eefc;
+      --muted:rgba(232,238,252,.7);
+      --line: rgba(255,255,255,.12);
+      --accent:#7aa2ff;
+      --accent2:#64ffd5;
+      --danger:#ff6b8a;
+      --shadow: 0 20px 50px rgba(0,0,0,.45);
+      --r:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 800px at 70% 10%, rgba(122,162,255,.15), transparent 55%),
+                  radial-gradient(900px 600px at 20% 20%, rgba(100,255,213,.10), transparent 55%),
+                  radial-gradient(900px 700px at 50% 110%, rgba(255,107,138,.08), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      font: 14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI","PingFang TC","Noto Sans TC",sans-serif;
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    .wrap{max-width:1150px; margin:0 auto; padding:22px}
+    header{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; margin-bottom:16px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+    }
+    .logo{
+      width:38px; height:38px; border-radius:12px;
+      background: linear-gradient(135deg, rgba(122,162,255,.9), rgba(100,255,213,.8));
+      box-shadow: 0 10px 25px rgba(122,162,255,.18);
+      position:relative;
+    }
+    .logo:after{
+      content:"";
+      position:absolute; inset:10px;
+      border-radius:10px;
+      background: rgba(11,15,23,.55);
+      border:1px solid rgba(255,255,255,.2);
+      backdrop-filter: blur(6px);
+    }
+    .brand h1{margin:0; font-size:16px; letter-spacing:.2px}
+    .brand p{margin:0; color:var(--muted); font-size:12px}
+    .topbar{display:flex; align-items:center; gap:10px; flex-wrap:nowrap}
+    .pill{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: 999px;
+      padding:8px 10px;
+      display:flex; align-items:center; gap:8px;
+      backdrop-filter: blur(10px);
+      min-width:0;
+      flex:1 1 auto;
+    }
+    .btn{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background: var(--card);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius: 12px;
+      transition:.15s transform, .15s background, .15s border-color;
+      user-select:none;
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    .btn:hover{transform: translateY(-1px); background: var(--card2); border-color: rgba(255,255,255,.18)}
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(122,162,255,.85), rgba(100,255,213,.55));
+      border-color: rgba(255,255,255,.22);
+      color:#081018;
+      font-weight:700;
+    }
+    .btn.danger{
+      background: rgba(255,107,138,.12);
+      border-color: rgba(255,107,138,.35);
+      color: #ffd1db;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 380px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+    }
+    .card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+    .card .hd{
+      padding:14px 14px 10px 14px;
+      display:flex; align-items:center; justify-content:space-between;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .card .hd h2{margin:0; font-size:13px; letter-spacing:.2px; color:rgba(232,238,252,.92)}
+    .card .bd{padding:14px}
+    .tabs{
+      display:flex; gap:8px; flex-wrap:wrap;
+    }
+    .tab{
+      padding:8px 10px; border-radius: 999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color: rgba(232,238,252,.82);
+      cursor:pointer;
+      user-select:none;
+    }
+    .tab.active{
+      background: rgba(122,162,255,.18);
+      border-color: rgba(122,162,255,.35);
+      color: var(--text);
+    }
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    label{color:var(--muted); font-size:12px}
+    input, select{
+      width:100%;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--text);
+      border-radius: 12px;
+      padding:10px 12px;
+      outline:none;
+    }
+    input:focus, select:focus{border-color: rgba(122,162,255,.6)}
+    .field{display:grid; gap:6px; margin-bottom:10px}
+    .hint{color:var(--muted); font-size:12px}
+    .split{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .statline{
+      display:flex; gap:10px; flex-wrap:wrap;
+      color: rgba(232,238,252,.88);
+    }
+    .chip{
+      padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      display:inline-flex; gap:8px; align-items:center;
+      font-size:12px;
+    }
+    .canvasWrap{
+      padding:14px;
+    }
+    canvas{
+      width:min(640px, 100%);
+      aspect-ratio: 1/1;
+      display:block;
+      margin:0 auto;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      cursor:pointer;
+      touch-action: manipulation;
+    }
+    .log{
+      max-height: 180px;
+      overflow:auto;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      padding:10px;
+      background: rgba(0,0,0,.18);
+      color: rgba(232,238,252,.85);
+      font-size:12px;
+      white-space: pre-wrap;
+    }
+    table{
+      width:100%;
+      border-collapse: collapse;
+      font-size:12px;
+    }
+    th, td{
+      text-align:left;
+      padding:10px 8px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      color: rgba(232,238,252,.86);
+    }
+    th{color: rgba(232,238,252,.72); font-weight:600}
+    .mini{
+      width:34px; height:34px; border-radius: 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      display:grid; place-items:center;
+      flex:0 0 auto;
+    }
+    #userPill > div:last-child{min-width:0}
+    #userMeta{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:320px;
+    }
+    @media (max-width: 980px){
+      .topbar{flex-wrap:wrap}
+      .pill{flex:1 1 100%}
+      #userMeta{max-width:100%}
+    }
+    .rightActions{display:flex; gap:8px; flex-wrap:wrap}
+    .toast{
+      position: fixed;
+      bottom: 18px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.18);
+      padding:10px 12px;
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      color: rgba(232,238,252,.95);
+      max-width: min(620px, calc(100% - 24px));
+      display:none;
+    }
+    .toast.show{display:block}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Gomoku</h1>
+          <p>Single-player AI / Local 2P / Online Match | Clean UI | Leaderboard & Profile</p>
+        </div>
+      </div>
+      <div class="topbar">
+        <div class="pill" id="userPill">
+          <div class="mini" id="avatarBox">😀</div>
+          <div style="display:grid; gap:2px">
+            <div id="userName" style="font-weight:700">Not logged in</div>
+            <div id="userMeta" class="hint">Please log in to use online mode and leaderboard</div>
+          </div>
+        </div>
+        <button class="btn" id="btnProfile">Profile</button>
+        <button class="btn" id="btnLeaderboard">Leaderboard</button>
+        <button class="btn primary" id="btnAuth">Login / Register</button>
+        <button class="btn danger" id="btnLogout" style="display:none">Logout</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Left: Modes / Settings / Panel -->
+      <div class="card">
+        <div class="hd">
+          <h2>Control Panel</h2>
+          <div class="rightActions">
+            <button class="btn" id="btnNew">New Game</button>
+            <button class="btn" id="btnUndo">Undo</button>
+          </div>
+        </div>
+        <div class="bd">
+          <div class="tabs" id="modeTabs">
+            <div class="tab active" data-mode="ai">Single-player AI</div>
+            <div class="tab" data-mode="local">Local 2P</div>
+            <div class="tab" data-mode="online">Online Match</div>
+          </div>
+
+          <div id="panel_ai" style="margin-top:12px">
+            <div class="split">
+              <div class="field">
+                <label>AI Difficulty</label>
+                <select id="aiLevel">
+                  <option value="easy">Easy (intuitive)</option>
+                  <option value="normal" selected>Normal（Minimax）</option>
+                  <option value="hard">Hard (deeper search)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Play first?</label>
+                <select id="humanFirst">
+                  <option value="yes" selected>Yes (Black)</option>
+                  <option value="no">No (White)</option>
+                </select>
+              </div>
+            </div>
+            <div class="hint">AI prioritizes key patterns like open three, open four, and broken four. Hard uses deeper Alpha-Beta search.</div>
+          </div>
+
+          <div id="panel_local" style="margin-top:12px; display:none">
+            <div class="hint">Two players take turns on one device (Black first, then White).</div>
+          </div>
+
+          <div id="panel_online" style="margin-top:12px; display:none">
+            <div class="hint">Login required. Create a room to share a code, or enter a code to join.</div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn primary" id="btnCreateRoom">Create Room</button>
+              <button class="btn" id="btnLeaveRoom">Leave Room</button>
+            </div>
+            <div class="field" style="margin-top:10px">
+              <label>Join Room Code</label>
+              <div class="row" style="width:100%">
+                <input id="joinCode" placeholder="e.g. A1B2C3" style="flex:1; min-width:180px" />
+                <button class="btn" id="btnJoinRoom">Join</button>
+              </div>
+            </div>
+            <div class="statline">
+              <span class="chip">Status: <b id="onlineStatus">Offline</b></span>
+              <span class="chip">Room: <b id="roomCode">—</b></span>
+              <span class="chip">Your Seat: <b id="seatInfo">—</b></span>
+            </div>
+          </div>
+
+          <div style="margin-top:14px" class="statline">
+            <span class="chip">Turn: <b id="turnText">Black (●)</b></span>
+            <span class="chip">Mode: <b id="modeText">Single-player AI</b></span>
+            <span class="chip">Result: <b id="resultText">In progress</b></span>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="hint" style="margin-bottom:6px">Match Log</div>
+            <div class="log" id="logBox"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Board -->
+      <div class="card">
+        <div class="hd">
+          <h2>Board (15x15)</h2>
+          <div class="hint" id="subHint">Click an intersection to place a stone. First to connect five wins.</div>
+        </div>
+        <div class="canvasWrap">
+          <canvas id="board" width="720" height="720"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Simple Modal -->
+  <div id="modalRoot" style="position:fixed; inset:0; display:none; place-items:center; padding:18px; background: rgba(0,0,0,.55); backdrop-filter: blur(10px);">
+    <div class="card" style="width:min(560px, 100%);">
+      <div class="hd">
+        <h2 id="modalTitle">Modal</h2>
+        <button class="btn" id="modalClose">Close</button>
+      </div>
+      <div class="bd" id="modalBody"></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ===== Basic Settings =====
+  const API_BASE = "http://localhost:8787";
+  const WS_BASE  = "ws://localhost:8787";
+  const N = 15;
+
+  // board[y][x] = 0 empty, 1 black, 2 white
+  let board = emptyBoard();
+  let history = [];
+  let turn = 1;
+  let winner = 0;
+
+  let mode = "ai"; // "ai"|"local"|"online"
+  let aiLevel = "normal";
+  let humanFirst = true;
+
+  // online
+  let ws = null;
+  let roomCode = null;
+  let seat = 0; // 1 black / 2 white
+  let onlinePlayers = [null, null, null];
+
+  // auth
+  let token = localStorage.getItem("gomoku_token") || "";
+  let me = null;
+
+  // UI refs
+  const $ = (q) => document.querySelector(q);
+  const canvas = $("#board");
+  const ctx = canvas.getContext("2d");
+  const logBox = $("#logBox");
+
+  function toast(msg){
+    const t = $("#toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._tm);
+    toast._tm = setTimeout(()=>t.classList.remove("show"), 2200);
+  }
+
+  function log(msg){
+    const ts = new Date().toLocaleTimeString();
+    logBox.textContent = `[${ts}] ${msg}\n` + logBox.textContent;
+  }
+
+  function setMode(m){
+    mode = m;
+    $("#modeText").textContent = m==="ai"?"Single-player AI":m==="local"?"Local 2P":"Online Match";
+    $("#panel_ai").style.display = m==="ai" ? "" : "none";
+    $("#panel_local").style.display = m==="local" ? "" : "none";
+    $("#panel_online").style.display = m==="online" ? "" : "none";
+    if (m !== "online") disconnectWS();
+    newGame(true);
+    if (m === "online") $("#subHint").textContent = "Online: New game/undo requires opponent approval";
+    else $("#subHint").textContent = "Click an intersection to place a stone. First to connect five wins.";
+  }
+
+  function emptyBoard(){
+    return Array.from({length:N},()=>Array(N).fill(0));
+  }
+
+  function newGame(silent=false){
+    board = emptyBoard();
+    history = [];
+    turn = 1;
+    winner = 0;
+    $("#resultText").textContent = "In progress";
+    updateTurnText();
+    render();
+
+    if (!silent) log("Started a new game");
+    if (mode==="ai"){
+      aiLevel = $("#aiLevel").value;
+      humanFirst = $("#humanFirst").value === "yes";
+      if (!humanFirst){
+        // AI moves first
+        setTimeout(()=>aiMove(), 120);
+      }
+    }
+  }
+
+  function updateTurnText(){
+    $("#turnText").textContent = (turn===1?"Black (●)":"White (○)");
+  }
+
+  function inBounds(x,y){ return x>=0 && x<N && y>=0 && y<N; }
+
+  function place(x,y,p){
+    if (winner) return false;
+    if (!inBounds(x,y)) return false;
+    if (board[y][x]!==0) return false;
+    board[y][x]=p;
+    history.push({x,y,p});
+    winner = checkWin(board, x, y);
+    if (winner){
+      $("#resultText").textContent = winner===1?"Black wins":"White wins";
+    }
+    turn = (turn===1?2:1);
+    updateTurnText();
+    render();
+    return true;
+  }
+
+  function undo(){
+    if (mode === "online"){
+      if (!ws || ws.readyState!==1) { toast("Not connected"); return; }
+      if (!seat) { toast("Not in a room yet"); return; }
+      if (winner) { toast("Game decided, online undo is locked"); return; }
+      ws.send(JSON.stringify({ type:"requestProposal", action:"undo" }));
+      toast("Undo request sent to opponent. Waiting for response...");
+      log("Sent: undo request (online)");
+      return;
+    }
+
+    openModal("Confirm: Undo", `
+      <div>Are you sure you want to undo?${mode==="ai" ? " (Single-player will also undo one AI move)" : ""}</div>
+      <div style="height:12px"></div>
+      <div class="row">
+        <button class="btn" id="cancelUndo">Cancel</button>
+        <button class="btn primary" id="confirmUndo">Confirm Undo</button>
+      </div>
+    `);
+    $("#cancelUndo").addEventListener("click", ()=>closeModal());
+    $("#confirmUndo").addEventListener("click", ()=>{
+      closeModal();
+      if (history.length===0) { toast("No move available to undo"); return; }
+      const a = history.pop();
+      board[a.y][a.x]=0;
+      winner = 0;
+      turn = a.p;
+      updateTurnText();
+      $("#resultText").textContent = "In progress";
+      render();
+
+      if (mode==="ai" && history.length>0){
+        const b = history[history.length-1];
+        const humanP = humanFirst ? 1 : 2;
+        if (b.p !== humanP){
+          const c = history.pop();
+          board[c.y][c.x]=0;
+          turn = c.p;
+          updateTurnText();
+          render();
+        }
+      }
+      log("Undo (local)");
+    });
+  }
+
+  // ===== Board Rendering =====
+  function render(){
+    const w=canvas.width, h=canvas.height;
+    ctx.clearRect(0,0,w,h);
+
+    // grid background
+    ctx.save();
+    ctx.globalAlpha = 1;
+    // subtle vignette
+    const g = ctx.createRadialGradient(w*0.5,h*0.4, 40, w*0.5,h*0.5, w*0.7);
+    g.addColorStop(0, "rgba(255,255,255,0.06)");
+    g.addColorStop(1, "rgba(0,0,0,0.10)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,w,h);
+
+    const pad = 36;
+    const size = Math.min(w,h) - pad*2;
+    const cell = size/(N-1);
+
+    // lines
+    ctx.strokeStyle = "rgba(255,255,255,0.14)";
+    ctx.lineWidth = 1;
+    for (let i=0;i<N;i++){
+      const x = pad + cell*i;
+      const y = pad + cell*i;
+      ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(pad+size, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, pad+size); ctx.stroke();
+    }
+
+    // star points
+    const stars = [3,7,11];
+    for (const sy of stars){
+      for (const sx of stars){
+        drawDot(pad+cell*sx, pad+cell*sy, 3.2, "rgba(255,255,255,0.22)");
+      }
+    }
+
+    // pieces
+    for (let y=0;y<N;y++){
+      for (let x=0;x<N;x++){
+        const p = board[y][x];
+        if (!p) continue;
+        const cx = pad+cell*x;
+        const cy = pad+cell*y;
+        drawPiece(cx, cy, cell*0.42, p);
+      }
+    }
+
+    // last move highlight
+    const last = history[history.length-1];
+    if (last){
+      const cx = pad+cell*last.x;
+      const cy = pad+cell*last.y;
+      ctx.strokeStyle = "rgba(122,162,255,0.70)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, cell*0.48, 0, Math.PI*2);
+      ctx.stroke();
+    }
+
+    // winner overlay
+    if (winner){
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillRect(0,0,w,h);
+      ctx.fillStyle = "rgba(232,238,252,0.92)";
+      ctx.font = "700 28px ui-sans-serif,system-ui";
+      const text = winner===1 ? "Black wins（●）" : "White wins（○）";
+      const m = ctx.measureText(text);
+      ctx.fillText(text, (w-m.width)/2, h/2);
+    }
+
+    ctx.restore();
+  }
+
+  function drawDot(x,y,r,fill){
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawPiece(x,y,r,p){
+    // fake 3D: gradient
+    const grad = ctx.createRadialGradient(x-r*0.35,y-r*0.35, r*0.2, x,y,r);
+    if (p===1){
+      grad.addColorStop(0, "rgba(255,255,255,0.18)");
+      grad.addColorStop(1, "rgba(0,0,0,0.92)");
+    }else{
+      grad.addColorStop(0, "rgba(255,255,255,0.95)");
+      grad.addColorStop(1, "rgba(170,180,210,0.75)");
+    }
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.22)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function xyFromEvent(ev){
+    const rect = canvas.getBoundingClientRect();
+    const px = (ev.clientX - rect.left) * (canvas.width / rect.width);
+    const py = (ev.clientY - rect.top)  * (canvas.height/ rect.height);
+
+    const pad = 36;
+    const size = Math.min(canvas.width,canvas.height) - pad*2;
+    const cell = size/(N-1);
+
+    const x = Math.round((px - pad)/cell);
+    const y = Math.round((py - pad)/cell);
+    if (!inBounds(x,y)) return null;
+
+    // allow some slack
+    const cx = pad + cell*x;
+    const cy = pad + cell*y;
+    const dist = Math.hypot(px-cx, py-cy);
+    if (dist > cell*0.55) return null;
+    return {x,y};
+  }
+
+  // ===== Win Check =====
+  function checkWin(b, lastX, lastY){
+    const p = b[lastY][lastX];
+    if (!p) return 0;
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    for (const [dx,dy] of dirs){
+      let cnt=1;
+      for (let k=1;k<5;k++){
+        const x=lastX+dx*k, y=lastY+dy*k;
+        if (!inBounds(x,y) || b[y][x]!==p) break;
+        cnt++;
+      }
+      for (let k=1;k<5;k++){
+        const x=lastX-dx*k, y=lastY-dy*k;
+        if (!inBounds(x,y) || b[y][x]!==p) break;
+        cnt++;
+      }
+      if (cnt>=5) return p;
+    }
+    return 0;
+  }
+
+  // ===== AI: Candidate Moves + Pattern Scoring + Minimax(AB) =====
+  // Approach:
+  // 1) Only consider candidate moves within distance 2 of any stone (heavy pruning)
+  // 2) Use pattern heuristics for scoring (open four / broken four / open three / closed three...)
+  // 3) Easy: one-ply search (immediate attack/defense)
+  // 4) Normal: Minimax depth=2~3 (with AB)
+  // 5) Hard: iterative deepening to 4~5 (time/node limits), stronger pruning and ordering
+
+  const PATTERN_SCORES = {
+    // From self perspective: larger is better
+    FIVE: 10000000,
+    OPEN_FOUR: 1200000,
+    FOUR: 240000,
+    OPEN_THREE: 45000,
+    THREE: 12000,
+    OPEN_TWO: 2500,
+    TWO: 700
+  };
+
+  function aiMove(){
+    if (winner) return;
+    const humanP = humanFirst ? 1 : 2;
+    const aiP = humanP===1 ? 2 : 1;
+    if (turn !== aiP) return;
+
+    const level = $("#aiLevel").value;
+    let best;
+
+    if (level==="easy"){
+      best = pickBestMoveOnePly(aiP, humanP, 10);
+    } else if (level==="normal"){
+      best = minimaxRoot(aiP, humanP, 3, 20_000);
+    } else {
+      best = iterativeDeepening(aiP, humanP, 5, 60_000);
+    }
+
+    if (!best){
+      // fallback: near center
+      best = {x:7,y:7};
+    }
+    place(best.x, best.y, aiP);
+    log(`AI move: (${best.x+1},${best.y+1})`);
+  }
+
+  function candidates(b){
+    // If board is empty: pick center directly
+    let any=false;
+    for (let y=0;y<N && !any;y++) for (let x=0;x<N;x++) if (b[y][x]) { any=true; break; }
+    if (!any) return [{x:7,y:7}];
+
+    const set = new Set();
+    const out = [];
+    for (let y=0;y<N;y++){
+      for (let x=0;x<N;x++){
+        if (!b[y][x]) continue;
+        for (let dy=-2; dy<=2; dy++){
+          for (let dx=-2; dx<=2; dx++){
+            const nx=x+dx, ny=y+dy;
+            if (!inBounds(nx,ny)) continue;
+            if (b[ny][nx]!==0) continue;
+            const key = ny*100+nx;
+            if (set.has(key)) continue;
+            set.add(key);
+            out.push({x:nx,y:ny});
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  function applyMove(b, mv, p){
+    b[mv.y][mv.x]=p;
+  }
+  function revertMove(b, mv){
+    b[mv.y][mv.x]=0;
+  }
+
+  function pickBestMoveOnePly(aiP, humanP, limit){
+    const b = cloneBoard(board);
+    let cand = candidates(b);
+
+    // Sort first: higher scores first (better pruning/more human-like)
+    cand = cand.map(m => ({...m, s: quickMoveScore(b, m, aiP, humanP)}))
+               .sort((a,b)=>b.s-a.s)
+               .slice(0, Math.max(limit, 8));
+
+    // Check first: whether AI can win immediately or must block player win
+    for (const m of cand){
+      applyMove(b,m,aiP);
+      if (checkWin(b, m.x, m.y)===aiP) { revertMove(b,m); return m; }
+      revertMove(b,m);
+    }
+    for (const m of cand){
+      applyMove(b,m,humanP);
+      if (checkWin(b, m.x, m.y)===humanP) { revertMove(b,m); return m; }
+      revertMove(b,m);
+    }
+
+    // Otherwise use quick score
+    return cand[0] || null;
+  }
+
+  function cloneBoard(b){ return b.map(row => row.slice()); }
+
+  function lineString(b, x, y, dx, dy, p){
+    // From (x,y), scan both sides and form a string, e.g. "..XX.X.."
+    // 0 empty=".", p="X", opp="O"
+    const opp = p===1?2:1;
+    let s = "X"; // Assume move is placed at center
+    // forward
+    for (let k=1;k<=5;k++){
+      const nx=x+dx*k, ny=y+dy*k;
+      if (!inBounds(nx,ny)) { s += "#"; break; }
+      const v = b[ny][nx];
+      s += v===0?".":(v===p?"X":"O");
+    }
+    // backward prepend
+    let pre = "";
+    for (let k=1;k<=5;k++){
+      const nx=x-dx*k, ny=y-dy*k;
+      if (!inBounds(nx,ny)) { pre = "#"+pre; break; }
+      const v = b[ny][nx];
+      pre = (v===0?".":(v===p?"X":"O")) + pre;
+    }
+    return pre + s;
+  }
+
+  function patternScoreForMove(b, mv, p){
+    // Treat mv as already placed by p and compute pattern score
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    let score = 0;
+    for (const [dx,dy] of dirs){
+      const s = lineString(b, mv.x, mv.y, dx, dy, p);
+      score += scoreLine(s);
+    }
+    return score;
+  }
+
+  function scoreLine(s){
+    // s contains '.' 'X' 'O' '#'
+    // Match common patterns
+    // Note: this is not an exact shape database, but strong enough in practice (especially with minimax)
+    let score = 0;
+
+    // Five
+    if (s.includes("XXXXX")) return PATTERN_SCORES.FIVE;
+
+    // Open four: .XXXX.
+    if (s.includes(".XXXX.")) score += PATTERN_SCORES.OPEN_FOUR;
+
+    // Four (broken four): XXXX. / .XXXX / XXX.X / XX.XX / X.XXX
+    if (s.match(/XXXX\./) || s.match(/\.XXXX/) || s.includes("XXX.X") || s.includes("XX.XX") || s.includes("X.XXX")){
+      score += PATTERN_SCORES.FOUR;
+    }
+
+    // Open three: .XXX. / .XX.X. / .X.XX.
+    if (s.includes(".XXX.") || s.includes(".XX.X.") || s.includes(".X.XX.")){
+      score += PATTERN_SCORES.OPEN_THREE;
+    }
+
+    // Three (closed three): XXX.. / ..XXX / XX.X. / .X.XX / X.XX. / .XX.X
+    if (s.match(/XXX\.\./) || s.match(/\.\.XXX/) || s.includes("XX.X.") || s.includes(".X.XX") || s.includes("X.XX.") || s.includes(".XX.X")){
+      score += PATTERN_SCORES.THREE;
+    }
+
+    // Open two: .XX. / .X.X. / .X..X.
+    if (s.includes(".XX.") || s.includes(".X.X.") || s.includes(".X..X.")){
+      score += PATTERN_SCORES.OPEN_TWO;
+    }
+
+    // Two
+    if (s.includes("XX..") || s.includes("..XX") || s.includes("X.X.") || s.includes(".X.X")){
+      score += PATTERN_SCORES.TWO;
+    }
+
+    return score;
+  }
+
+  function evaluateBoard(b, maxP){
+    // Evaluation: larger maxP is better, smaller opponent score is better
+    const minP = maxP===1?2:1;
+
+    // Only scan around candidate areas on the board (simplified)
+    const cand = candidates(b);
+    let maxScore = 0;
+    let minScore = 0;
+
+    for (const mv of cand){
+      // max side
+      applyMove(b, mv, maxP);
+      const w1 = checkWin(b, mv.x, mv.y);
+      let s1 = (w1===maxP) ? PATTERN_SCORES.FIVE : patternScoreForMove(b, mv, maxP);
+      revertMove(b, mv);
+      maxScore = Math.max(maxScore, s1);
+
+      // min side
+      applyMove(b, mv, minP);
+      const w2 = checkWin(b, mv.x, mv.y);
+      let s2 = (w2===minP) ? PATTERN_SCORES.FIVE : patternScoreForMove(b, mv, minP);
+      revertMove(b, mv);
+      minScore = Math.max(minScore, s2);
+    }
+
+    // Prioritize opponent threats more to avoid giving open fours
+    return maxScore - minScore*1.08;
+  }
+
+  function quickMoveScore(b, mv, aiP, humanP){
+    // Consider both offense and defense score for this move
+    applyMove(b, mv, aiP);
+    const w = checkWin(b, mv.x, mv.y);
+    let atk = (w===aiP) ? PATTERN_SCORES.FIVE : patternScoreForMove(b, mv, aiP);
+    revertMove(b, mv);
+
+    applyMove(b, mv, humanP);
+    const w2 = checkWin(b, mv.x, mv.y);
+    let def = (w2===humanP) ? PATTERN_SCORES.FIVE : patternScoreForMove(b, mv, humanP);
+    revertMove(b, mv);
+
+    return atk + def*0.92;
+  }
+
+  function minimaxRoot(maxP, minP, depth, nodeLimit){
+    const b = cloneBoard(board);
+    let nodes = 0;
+
+    let cand = candidates(b)
+      .map(m => ({...m, s: quickMoveScore(b, m, maxP, minP)}))
+      .sort((a,b)=>b.s-a.s)
+      .slice(0, 18);
+
+    let best = null;
+    let bestVal = -Infinity;
+    let alpha = -Infinity, beta = Infinity;
+
+    for (const mv of cand){
+      if (nodes++ > nodeLimit) break;
+      applyMove(b, mv, maxP);
+      let val;
+      if (checkWin(b, mv.x, mv.y)===maxP) val = PATTERN_SCORES.FIVE;
+      else val = minimax(b, depth-1, false, maxP, minP, alpha, beta, () => (++nodes > nodeLimit));
+      revertMove(b, mv);
+
+      if (val > bestVal){
+        bestVal = val;
+        best = {x:mv.x,y:mv.y};
+      }
+      alpha = Math.max(alpha, bestVal);
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+
+  function iterativeDeepening(maxP, minP, maxDepth, nodeLimit){
+    const b = cloneBoard(board);
+    let best = null;
+
+    // Use one-ply first for initial move
+    best = pickBestMoveOnePly(maxP, minP, 14) || best;
+
+    // Iteratively deepen
+    let nodes = 0;
+    for (let d=2; d<=maxDepth; d++){
+      let cand = candidates(b)
+        .map(m => ({...m, s: quickMoveScore(b, m, maxP, minP)}))
+        .sort((a,b)=>b.s-a.s)
+        .slice(0, 20);
+
+      let alpha=-Infinity, beta=Infinity;
+      let bestVal=-Infinity;
+      let localBest = best;
+
+      for (const mv of cand){
+        if (nodes++ > nodeLimit) return localBest;
+        applyMove(b, mv, maxP);
+        let val;
+        if (checkWin(b, mv.x, mv.y)===maxP) val = PATTERN_SCORES.FIVE;
+        else val = minimax(b, d-1, false, maxP, minP, alpha, beta, () => (++nodes > nodeLimit));
+        revertMove(b, mv);
+
+        if (val > bestVal){
+          bestVal = val;
+          localBest = {x:mv.x,y:mv.y};
+        }
+        alpha = Math.max(alpha, bestVal);
+        if (beta <= alpha) break;
+      }
+      best = localBest;
+    }
+    return best;
+  }
+
+  function minimax(b, depth, maximizing, maxP, minP, alpha, beta, shouldStop){
+    if (shouldStop?.()) return evaluateBoard(b, maxP);
+    if (depth<=0) return evaluateBoard(b, maxP);
+
+    const p = maximizing ? maxP : minP;
+    const opp = p===1?2:1;
+
+    let cand = candidates(b)
+      .map(m => ({...m, s: quickMoveScore(b, m, p, opp)}))
+      .sort((a,b)=>b.s-a.s)
+      .slice(0, maximizing ? 16 : 16);
+
+    if (maximizing){
+      let best = -Infinity;
+      for (const mv of cand){
+        applyMove(b, mv, p);
+        const w = checkWin(b, mv.x, mv.y);
+        let val;
+        if (w===p) val = PATTERN_SCORES.FIVE;
+        else val = minimax(b, depth-1, false, maxP, minP, alpha, beta, shouldStop);
+        revertMove(b, mv);
+        best = Math.max(best, val);
+        alpha = Math.max(alpha, best);
+        if (beta <= alpha) break;
+        if (shouldStop?.()) break;
+      }
+      return best;
+    } else {
+      let best = Infinity;
+      for (const mv of cand){
+        applyMove(b, mv, p);
+        const w = checkWin(b, mv.x, mv.y);
+        let val;
+        if (w===p) val = -PATTERN_SCORES.FIVE; // Bad for maxP
+        else val = minimax(b, depth-1, true, maxP, minP, alpha, beta, shouldStop);
+        revertMove(b, mv);
+        best = Math.min(best, val);
+        beta = Math.min(beta, best);
+        if (beta <= alpha) break;
+        if (shouldStop?.()) break;
+      }
+      return best;
+    }
+  }
+
+  // ===== Interaction: Click to Move =====
+  canvas.addEventListener("click", (ev) => {
+    const pos = xyFromEvent(ev);
+    if (!pos) return;
+
+    if (mode==="online"){
+      if (!ws || ws.readyState!==1){ toast("Not connected"); return; }
+      if (!seat){ toast("Not in a room yet"); return; }
+      if (winner){ toast("Finished"); return; }
+      if (turn !== seat){ toast("Not your turn yet"); return; }
+      // Send to server
+      ws.send(JSON.stringify({ type:"move", x:pos.x, y:pos.y }));
+      return;
+    }
+
+    if (mode==="local"){
+      if (place(pos.x,pos.y, turn===1?1:2)){
+        log(`Move: ${history[history.length-1].p===1?"Black":"White"} (${pos.x+1},${pos.y+1})`);
+      }
+      return;
+    }
+
+    if (mode==="ai"){
+      const humanP = humanFirst ? 1 : 2;
+      if (winner) return;
+      if (turn !== humanP){ toast("AI is thinking"); return; }
+      if (place(pos.x,pos.y, humanP)){
+        log(`Your move: (${pos.x+1},${pos.y+1})`);
+        if (!winner){
+          setTimeout(()=>aiMove(), 90);
+        } else {
+          // Optional: report result (if logged in)
+          if (me) reportLocalResult("win", "AI");
+        }
+      }
+      return;
+    }
+  });
+
+  // ===== UI: Mode Switch =====
+  $("#modeTabs").addEventListener("click", (ev) => {
+    const t = ev.target.closest(".tab");
+    if (!t) return;
+    [...document.querySelectorAll(".tab")].forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    setMode(t.dataset.mode);
+  });
+
+  $("#aiLevel").addEventListener("change", () => {
+    aiLevel = $("#aiLevel").value;
+    toast("Difficulty switched");
+    newGame(true);
+  });
+  $("#humanFirst").addEventListener("change", () => {
+    humanFirst = $("#humanFirst").value === "yes";
+    toast("First-move setting switched");
+    newGame(true);
+  });
+
+  $("#btnNew").addEventListener("click", ()=>{
+    if (mode === "online"){
+      if (!ws || ws.readyState!==1) { toast("Not connected"); return; }
+      if (!seat) { toast("Not in a room yet"); return; }
+      ws.send(JSON.stringify({ type:"requestProposal", action:"newGame" }));
+      toast("New game request sent to opponent. Waiting for response...");
+      log("Sent: new game request (online)");
+      return;
+    }
+
+    openModal("Confirm: Start New Game", `
+      <div>Start a new game? (Current board will be cleared)</div>
+      <div style="height:12px"></div>
+      <div class="row">
+        <button class="btn" id="cancelNew">Cancel</button>
+        <button class="btn primary" id="confirmNew">Confirm Start</button>
+      </div>
+    `);
+    $("#cancelNew").addEventListener("click", ()=>closeModal());
+    $("#confirmNew").addEventListener("click", ()=>{
+      closeModal();
+      newGame();
+      log("User confirmed: new game");
+    });
+  });
+  $("#btnUndo").addEventListener("click", ()=>undo());
+
+  // ===== Auth / Profile / Leaderboard =====
+  function setUserUI(){
+    const logged = !!me;
+    $("#btnAuth").style.display = logged ? "none" : "";
+    $("#btnLogout").style.display = logged ? "" : "none";
+    $("#userName").textContent = logged ? `${me.avatar} ${me.nickname}` : "Not logged in";
+    $("#avatarBox").textContent = logged ? me.avatar : "😀";
+    $("#userMeta").textContent = logged
+      ? `@${me.username}｜Rating ${me.rating}｜W/L ${me.wins}/${me.losses}`
+      : "Please log in to use online mode and leaderboard";
+  }
+
+  async function api(path, opt={}){
+    const headers = Object.assign({ "Content-Type":"application/json" }, opt.headers||{});
+    if (token) headers.Authorization = "Bearer " + token;
+    const res = await fetch(API_BASE + path, { ...opt, headers });
+    const data = await res.json().catch(()=> ({}));
+    if (!res.ok) throw new Error(data.error || "Request failed");
+    return data;
+  }
+
+  async function refreshMe(){
+    if (!token) { me=null; setUserUI(); return; }
+    try{
+      const r = await api("/api/me");
+      me = r.user;
+      setUserUI();
+    }catch{
+      token=""; localStorage.removeItem("gomoku_token");
+      me=null; setUserUI();
+    }
+  }
+
+  function openModal(title, html){
+    $("#modalTitle").textContent = title;
+    $("#modalBody").innerHTML = html;
+    $("#modalRoot").style.display = "grid";
+  }
+  function closeModal(){ $("#modalRoot").style.display = "none"; }
+  $("#modalClose").addEventListener("click", closeModal);
+  $("#modalRoot").addEventListener("click", (e)=>{ if (e.target.id==="modalRoot") closeModal(); });
+
+  $("#btnAuth").addEventListener("click", ()=>{
+    openModal("Login / Register", `
+      <div class="split">
+        <div class="card" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.10); box-shadow:none">
+          <div class="bd">
+            <div style="font-weight:800; margin-bottom:8px">Login</div>
+            <div class="field"><label>Username</label><input id="login_user" placeholder="e.g. player_01"></div>
+            <div class="field"><label>Password</label><input id="login_pass" type="password" placeholder="at least 6 characters"></div>
+            <button class="btn primary" id="doLogin" style="width:100%">Login</button>
+          </div>
+        </div>
+        <div class="card" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.10); box-shadow:none">
+          <div class="bd">
+            <div style="font-weight:800; margin-bottom:8px">Register</div>
+            <div class="field"><label>Username</label><input id="reg_user" placeholder="3-20: a-z0-9_"></div>
+            <div class="field"><label>Password</label><input id="reg_pass" type="password" placeholder="at least 6 characters"></div>
+            <div class="field"><label>Nickname</label><input id="reg_nick" placeholder="Display name"></div>
+            <button class="btn" id="doReg" style="width:100%">Register</button>
+          </div>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:10px">Tip: Online rooms and leaderboard require login.</div>
+    `);
+
+    $("#doLogin").addEventListener("click", async ()=>{
+      try{
+        const username = $("#login_user").value.trim();
+        const password = $("#login_pass").value;
+        const r = await api("/api/login", { method:"POST", body: JSON.stringify({ username, password }) });
+        token = r.token; localStorage.setItem("gomoku_token", token);
+        me = r.user;
+        setUserUI();
+        toast("Login successful");
+        closeModal();
+      }catch(e){
+        toast(e.message);
+      }
+    });
+
+    $("#doReg").addEventListener("click", async ()=>{
+      try{
+        const username = $("#reg_user").value.trim();
+        const password = $("#reg_pass").value;
+        const nickname = $("#reg_nick").value.trim();
+        const r = await api("/api/register", { method:"POST", body: JSON.stringify({ username, password, nickname }) });
+        token = r.token; localStorage.setItem("gomoku_token", token);
+        me = r.user;
+        setUserUI();
+        toast("Registration successful");
+        closeModal();
+      }catch(e){
+        toast(e.message);
+      }
+    });
+  });
+
+  $("#btnLogout").addEventListener("click", ()=>{
+    token=""; me=null;
+    localStorage.removeItem("gomoku_token");
+    setUserUI();
+    disconnectWS();
+    toast("Logged out");
+  });
+
+  $("#btnProfile").addEventListener("click", async ()=>{
+    if (!me){ toast("Please log in first"); return; }
+    openModal("Profile", `
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <div class="mini" style="font-size:18px" id="pf_avatarPreview">${me.avatar}</div>
+          <div style="display:grid">
+            <div style="font-weight:800; font-size:15px">${me.nickname}</div>
+            <div class="hint">@${me.username}｜Rating ${me.rating}</div>
+          </div>
+        </div>
+        <div class="chip">Win Rate: <b>${rateStr(me)}</b></div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="split">
+        <div class="field">
+          <label>Nickname</label>
+          <input id="pf_nick" value="${escapeHtml(me.nickname)}" />
+        </div>
+        <div class="field">
+          <label>Avatar (emoji)</label>
+          <input id="pf_avatar" value="${escapeHtml(me.avatar)}" />
+        </div>
+      </div>
+      <button class="btn primary" id="pf_save" style="width:100%">Save</button>
+      <div class="hint" style="margin-top:8px">W/L：${me.wins}/${me.losses}</div>
+    `);
+
+    $("#pf_avatar").addEventListener("input", ()=>{
+      $("#pf_avatarPreview").textContent = ($("#pf_avatar").value || "😀").slice(0,4);
+    });
+
+    $("#pf_save").addEventListener("click", async ()=>{
+      try{
+        const nickname = $("#pf_nick").value.trim();
+        const avatar = ($("#pf_avatar").value || "😀").trim().slice(0,4);
+        const r = await api("/api/me", { method:"POST", body: JSON.stringify({ nickname, avatar }) });
+        me = r.user;
+        setUserUI();
+        toast("Updated");
+        closeModal();
+      }catch(e){
+        toast(e.message);
+      }
+    });
+  });
+
+  $("#btnLeaderboard").addEventListener("click", async ()=>{
+    try{
+      const r = await api("/api/leaderboard");
+      const rows = r.top.map((u,i)=>`
+        <tr>
+          <td>${i+1}</td>
+          <td>${escapeHtml(u.avatar||"😀")} ${escapeHtml(u.nickname||u.username)}</td>
+          <td>${u.rating}</td>
+          <td>${u.wins}/${u.losses}</td>
+          <td>${rateStr(u)}</td>
+        </tr>
+      `).join("");
+      openModal("Leaderboard (Top 50)", `
+        <table>
+          <thead><tr><th>#</th><th>Player</th><th>Rating</th><th>W/L</th><th>Win Rate</th></tr></thead>
+          <tbody>${rows || ""}</tbody>
+        </table>
+        <div class="hint" style="margin-top:8px">Rating: Win +20, Loss -10 (minimum 0).</div>
+      `);
+    }catch(e){
+      toast(e.message);
+    }
+  });
+
+  function rateStr(u){
+    const w = Number(u.wins||0), l = Number(u.losses||0);
+    const t = w+l;
+    const r = t? (w/t*100) : 0;
+    return r.toFixed(1)+"%";
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  async function reportLocalResult(result, opponent){
+    // Optional: also submit single-player vs AI results to backend leaderboard
+    try{
+      const r = await api("/api/matchResult", { method:"POST", body: JSON.stringify({ opponent, result }) });
+      me = r.user;
+      setUserUI();
+    }catch{ /* ignore */ }
+  }
+
+  // ===== Online: WebSocket Rooms =====
+  function connectWS(){
+    if (!token){ toast("Please log in first"); return; }
+    if (ws && ws.readyState===1) return;
+
+    ws = new WebSocket(WS_BASE);
+    $("#onlineStatus").textContent = "Connecting...";
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type:"auth", token }));
+    };
+    ws.onclose = () => {
+      $("#onlineStatus").textContent = "Offline";
+      $("#roomCode").textContent = "—";
+      $("#seatInfo").textContent = "—";
+      roomCode=null; seat=0; onlinePlayers=[null,null,null];
+    };
+    ws.onmessage = (ev) => {
+      let msg;
+      try{ msg=JSON.parse(ev.data); }catch{ return; }
+      if (msg.type==="auth_ok"){
+        $("#onlineStatus").textContent = "Connected";
+        log("Connected to match server");
+      } else if (msg.type==="auth_fail"){
+        $("#onlineStatus").textContent = "Login expired";
+        toast("Login expired, please log in again");
+      } else if (msg.type==="room"){
+        roomCode = msg.code;
+        seat = msg.seat;
+        $("#roomCode").textContent = roomCode;
+        $("#seatInfo").textContent = seat===1 ? "Black (●)" : "White (○)";
+        toast(`Entered room ${roomCode}`);
+        log(`Room: ${roomCode}, you are ${seat===1?"Black":"White"}`);
+      } else if (msg.type==="state"){
+        // Sync board
+        board = msg.board;
+        history = Array.isArray(msg.history) ? msg.history : history;
+        turn = msg.turn;
+        winner = msg.winner || 0;
+        onlinePlayers = msg.players || onlinePlayers;
+        updateTurnText();
+        $("#resultText").textContent = winner ? (winner===1?"Black wins":"White wins") : "In progress";
+        render();
+        if (msg.undoCounts && seat){
+          const MAX_UNDO = 3;
+          const used = msg.undoCounts[seat] || 0;
+          $("#subHint").textContent = `Online: Undo used ${used}/${MAX_UNDO} times (new game/undo requires opponent approval)`;
+        } else if (mode === "online"){
+          $("#subHint").textContent = "Online: New game/undo requires opponent approval";
+        }
+        if (msg.lastMove){
+          log(`Match update: ${msg.lastMove.p===1?"Black":"White"} (${msg.lastMove.x+1},${msg.lastMove.y+1})`);
+        }
+      } else if (msg.type === "proposal") {
+          const actText = msg.action === "newGame" ? "Restart game" : "Undo (revert 1 move)";
+          openModal("Opponent Request", `
+            <div>Opponent request: <b>${actText}</b></div>
+            <div class="hint" style="margin-top:6px">(Reply within 20 seconds, timeout counts as rejection)</div>
+            <div style="height:12px"></div>
+            <div class="row">
+              <button class="btn" id="rejectProp">Reject</button>
+              <button class="btn primary" id="acceptProp">Accept</button>
+            </div>
+          `);
+          $("#rejectProp").addEventListener("click", ()=>{
+            closeModal();
+            ws.send(JSON.stringify({ type: "respondProposal", proposalId: msg.id, accept: false }));
+            log("Rejected opponent request");
+          });
+          $("#acceptProp").addEventListener("click", ()=>{
+            closeModal();
+            ws.send(JSON.stringify({ type: "respondProposal", proposalId: msg.id, accept: true }));
+            log("Accepted opponent request");
+          });
+
+        } else if (msg.type === "proposal_sent") {
+          log(`Request sent: ${msg.action}`);
+
+        } else if (msg.type === "proposal_result") {
+          if (msg.accept) toast("Opponent accepted");
+          else toast(msg.reason === "timeout" ? "Opponent did not reply (timeout)" : "Opponent rejected");
+      } else if (msg.type==="error"){
+        toast(msg.message || "Error");
+      }
+    };
+  }
+
+  function disconnectWS(){
+    if (ws){
+      try{ ws.close(); }catch{}
+      ws=null;
+    }
+    roomCode=null; seat=0;
+    $("#onlineStatus").textContent = "Offline";
+    $("#roomCode").textContent = "—";
+    $("#seatInfo").textContent = "—";
+  }
+
+  $("#btnCreateRoom").addEventListener("click", ()=>{
+    if (!me){ toast("Please log in first"); return; }
+    connectWS();
+    setTimeout(()=>{
+      if (ws && ws.readyState===1){
+        ws.send(JSON.stringify({ type:"createRoom" }));
+        log("Creating room...");
+      }
+    }, 120);
+  });
+
+  $("#btnJoinRoom").addEventListener("click", ()=>{
+    if (!me){ toast("Please log in first"); return; }
+    const code = $("#joinCode").value.trim().toUpperCase();
+    if (!code){ toast("Please enter a room code"); return; }
+    connectWS();
+    setTimeout(()=>{
+      if (ws && ws.readyState===1){
+        ws.send(JSON.stringify({ type:"joinRoom", code }));
+        log("Joining room...");
+      }
+    }, 120);
+  });
+
+  $("#btnLeaveRoom").addEventListener("click", ()=>{
+    disconnectWS();
+    toast("Left room");
+  });
+
+  // ===== Initialization =====
+  setUserUI();
+  refreshMe();
+  newGame(true);
+  render();
+
+  // Default mode: AI
+  setMode("ai");
+})();
+</script>
+</body>
+</html>
